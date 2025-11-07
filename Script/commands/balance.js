@@ -22,20 +22,17 @@ function setBalance(userID, balance) {
   fs.writeFileSync(balanceFile, JSON.stringify(data, null, 2));
 }
 
+// ✅ Updated: Balance with comma
 function formatBalance(num) {
-  if (num >= 1e12) return (num / 1e12).toFixed(1).replace(/\.0$/, '') + "T$";
-  if (num >= 1e9) return (num / 1e9).toFixed(1).replace(/\.0$/, '') + "B$";
-  if (num >= 1e6) return (num / 1e6).toFixed(1).replace(/\.0$/, '') + "M$";
-  if (num >= 1e3) return (num / 1e3).toFixed(1).replace(/\.0$/, '') + "k$";
-  return num + "$";
+  return num.toLocaleString(); // 10000 -> 10,000
 }
 
 module.exports.config = {
   name: "balance",
-  version: "1.0.0",
+  version: "2.0.0",
   hasPermission: 0,
   credits: "MOHAMMAD AKASH",
-  description: "Check or transfer your balance with a stylish Mirai bank card",
+  description: "Mirai Bank balance card with join date",
   commandCategory: "game",
   usages: "[transfer @mention amount] or leave empty to check balance",
   cooldowns: 5
@@ -79,6 +76,10 @@ module.exports.run = async function({ api, event, args, Users }) {
     const userName = await Users.getNameUser(senderID);
     const formatted = formatBalance(balance);
 
+    const userInfo = await api.getUserInfo(senderID);
+    const joinDate = new Date(userInfo[senderID]?.created_time || Date.now());
+    const joinText = `${joinDate.getDate().toString().padStart(2, "0")}/${(joinDate.getMonth() + 1).toString().padStart(2, "0")}/${joinDate.getFullYear()}`;
+
     const picUrl = `https://graph.facebook.com/${senderID}/picture?height=500&width=500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
 
     let avatar = null;
@@ -93,9 +94,9 @@ module.exports.run = async function({ api, event, args, Users }) {
 
     // Background Gradient
     const grad = ctx.createLinearGradient(0, 0, width, height);
-    grad.addColorStop(0, '#0f0c29');
-    grad.addColorStop(0.5, '#302b63');
-    grad.addColorStop(1, '#24243e');
+    grad.addColorStop(0, '#000428');
+    grad.addColorStop(0.5, '#004e92');
+    grad.addColorStop(1, '#0f2027');
     ctx.fillStyle = grad;
     roundRect(ctx, 0, 0, width, height, 35, true);
 
@@ -122,28 +123,27 @@ module.exports.run = async function({ api, event, args, Users }) {
       ctx.stroke();
     }
 
-    // === 🏦 Bank Name ===
-    ctx.font = 'bold 38px "Segoe UI"';
+    // === Bank Name ===
+    ctx.font = 'bold 40px "Segoe UI"';
     ctx.fillStyle = '#00d4ff';
     ctx.fillText('MIRAI BANK', 60, 100);
 
-    // === Card Number ===
-    ctx.font = '32px monospace';
+    // === Account Info ===
+    ctx.font = '28px monospace';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('•••• •••• •••• 8456', 60, 180);
+    ctx.fillText(`ACCT NO: ${senderID.slice(-8)}`, 60, 200);
 
-    // === Card Holder ===
     ctx.font = 'bold 30px "Segoe UI"';
     ctx.fillStyle = '#ffffff';
     ctx.fillText(userName.toUpperCase(), 60, 250);
 
-    // === Valid Thru ===
+    // === Join Date ===
     ctx.font = '22px "Segoe UI"';
     ctx.fillStyle = '#cccccc';
-    ctx.fillText('VALID THRU', 60, 310);
+    ctx.fillText('JOIN DATE', 60, 310);
     ctx.font = '28px "Segoe UI"';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('12/28', 60, 350);
+    ctx.fillText(joinText, 60, 350);
 
     // === Balance Box (Right Center) ===
     ctx.fillStyle = 'rgba(0, 212, 255, 0.15)';
@@ -181,7 +181,7 @@ module.exports.run = async function({ api, event, args, Users }) {
     drawContactless(ctx, 300, 430);
 
     const buffer = canvas.toBuffer('image/png');
-    const filePath = path.join(__dirname, 'cache', 'balance_card.png');
+    const filePath = path.join(__dirname, 'cache', 'mirai_bank_card.png');
     if (!fs.existsSync(path.join(__dirname, 'cache'))) {
       fs.mkdirSync(path.join(__dirname, 'cache'), { recursive: true });
     }
@@ -194,7 +194,7 @@ module.exports.run = async function({ api, event, args, Users }) {
 
   } catch (error) {
     console.error(error);
-    api.sendMessage("❌ Error generating balance card!", threadID, messageID);
+    api.sendMessage("❌ Error generating Mirai Bank card!", threadID, messageID);
   }
 };
 
